@@ -9,32 +9,48 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.media.Image;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
+
+import static android.graphics.Paint.Style.FILL;
+import static java.lang.Math.abs;
+import static java.lang.Math.floor;
 
 public class khet_canvas extends View {
 
     Bitmap bitmap;
     Canvas myBitmapCanvas;
     Paint linePaint;
+    Paint rectPaint;
     Bitmap imageBitmap;
 
     Bitmap bitmap1;
 
     Drawable image;
+    Boolean pieceSelected=false;
+    Boolean touched=false;
+    Boolean screenFree=false;
+    Boolean start=false;
+    int pieceToDraw ;
 
     int w;
     int h;
+    int boxNo = -1;
 
     int[][] squares =new int[80][2];
 
     public khet_canvas(Context context) {
         super(context);
         image = getResources().getDrawable(R.drawable.pyramid_red);
+        rectPaint = new Paint();
         linePaint = new Paint();
         linePaint.setColor(Color.BLACK);
         linePaint.setStrokeWidth(2);
+        rectPaint.setColor(Color.WHITE);
+        rectPaint.setStyle(FILL);
+
     }
 
 
@@ -65,8 +81,14 @@ public class khet_canvas extends View {
 
 
 //        RotateBitmap(imageBitmap,90);
+        if(touched==true){
+            pieceSelected=true;
+        }
+        if(start==false){
+            initialSetup();
+            start=true;
+        }
 
-        initialSetup();
 
 
         canvas.drawBitmap(bitmap,0,0,null);
@@ -165,8 +187,8 @@ public class khet_canvas extends View {
         imageBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.pyramid_silver);
         bitmap1= Bitmap.createScaledBitmap(RotateBitmap(imageBitmap,180),w/12,w/12,true);
         myBitmapCanvas.drawBitmap(bitmap1,w/2 + w/12, h/2+(w/12), null);
-        squares[12][0] = 5;
-        squares[12][1] = 3;
+        squares[56][0] = 5;
+        squares[56][1] = 3;
 
         imageBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.scarab_red);
         bitmap1= Bitmap.createScaledBitmap(imageBitmap,w/12,w/12,true);
@@ -235,22 +257,376 @@ public class khet_canvas extends View {
         int currentX = (int) event.getX();
         int currentY = (int) event.getY();
 
-        if(currentX>w/2-(5*w/12)&&currentX<w/2+(5*w/12)&&currentY>h/2-(4*w/12)&&currentY<h/2+(4*w/12)){
+
+        if((currentX>w/2-(5*w/12)&&currentX<w/2+(5*w/12)&&currentY>h/2-(4*w/12)&&currentY<h/2+(4*w/12))&&!pieceSelected&&!touched){
 
 
             int disX = currentX - w/12;
             int disY = currentY - (h/2-4*w/12);
 
-            int boxNo = (disY/(w/12)) *10 + disX/(w/12);
-
-
-
+            boxNo = (disY/(w/12)) *10 + disX/(w/12);
             if(squares[boxNo][0]!=0){
-                Toast.makeText(getContext(), "something is here", Toast.LENGTH_SHORT).show();
+                touched=true;
             }
+
+
+
+
+
+
         }
 
+        if((currentX>w/2-(5*w/12)&&currentX<w/2+(5*w/12)&&currentY>h/2-(4*w/12)&&currentY<h/2+(4*w/12))&&pieceSelected){
+                int lineX = w/2 + (boxNo%10 -5 )*w/12;
+                int lineY = h/2 + (boxNo/10 -4 )*w/12;
+            Toast.makeText(getContext(), "touched again " + boxNo, Toast.LENGTH_SHORT).show();
 
-        return true;
+                //for free box there are 8 possibilities
+                if(abs(lineX-currentX)<w/12&&currentX<lineX&&currentY<lineY&&abs(lineY-currentY)<w/12){
+                    if(squares[boxNo-11][0]==0){
+
+
+                        if(squares[boxNo][0]==1){
+                            pieceToDraw = R.drawable.pyramid_red;
+                            squares[boxNo-11][0]=1;
+                        }
+                        else if(squares[boxNo][0]==2){
+                            pieceToDraw = R.drawable.scarab_red;
+                            squares[boxNo-11][0]=2;
+                        }
+                        else if(squares[boxNo][0]==3){
+                            pieceToDraw = R.drawable.aunbis_red;
+                            squares[boxNo-11][0]=3;
+                        }
+                        else if(squares[boxNo][0]==4){
+                            pieceToDraw = R.drawable.pharoah_red;
+                            squares[boxNo-11][0]=4;
+                        }
+                        else if(squares[boxNo][0]==5){
+                            pieceToDraw = R.drawable.pyramid_silver;
+                            squares[boxNo-11][0]=5;
+                        }
+                        else if(squares[boxNo][0]==6){
+                            pieceToDraw = R.drawable.scarab_silver;
+                            squares[boxNo-11][0]=6;
+                        }
+                        else if(squares[boxNo][0]==7){
+                            pieceToDraw = R.drawable.anubis_silver;
+                            squares[boxNo-11][0]=7;
+                        }
+                        else if(squares[boxNo][0]==8){
+                            pieceToDraw = R.drawable.pharoah_silver;
+                            squares[boxNo-11][0]=8;
+                        }
+                        squares[boxNo][0] = 0;
+
+                        imageBitmap = BitmapFactory.decodeResource(getResources(),pieceToDraw);
+                        bitmap1= Bitmap.createScaledBitmap(imageBitmap,w/12,w/12,true);
+                        myBitmapCanvas.drawBitmap(bitmap1,lineX-w/12 , lineY-w/12, null);
+
+                        myBitmapCanvas.drawRect(lineX,lineY,lineX+w/12,lineY+w/12,rectPaint);
+                        invalidate();
+                    }
+
+                }
+                else if(abs(lineX-currentX)<w/12&&currentX>lineX&&currentY<lineY&&abs(lineY-currentY)<w/12) {
+                    if (squares[boxNo - 10][0] == 0) {
+
+
+                        if (squares[boxNo][0] == 1) {
+                            pieceToDraw = R.drawable.pyramid_red;
+                            squares[boxNo - 10][0] = 1;
+                        } else if (squares[boxNo][0] == 2) {
+                            pieceToDraw = R.drawable.scarab_red;
+                            squares[boxNo - 10][0] = 2;
+                        } else if (squares[boxNo][0] == 3) {
+                            pieceToDraw = R.drawable.aunbis_red;
+                            squares[boxNo - 10][0] = 3;
+                        } else if (squares[boxNo][0] == 4) {
+                            pieceToDraw = R.drawable.pharoah_red;
+                            squares[boxNo - 10][0] = 4;
+                        } else if (squares[boxNo][0] == 5) {
+                            pieceToDraw = R.drawable.pyramid_silver;
+                            squares[boxNo - 10][0] = 5;
+                        } else if (squares[boxNo][0] == 6) {
+                            pieceToDraw = R.drawable.scarab_silver;
+                            squares[boxNo - 10][0] = 6;
+                        } else if (squares[boxNo][0] == 7) {
+                            pieceToDraw = R.drawable.anubis_silver;
+                            squares[boxNo - 10][0] = 7;
+                        } else if (squares[boxNo][0] == 8) {
+                            pieceToDraw = R.drawable.pharoah_silver;
+                            squares[boxNo - 10][0] = 8;
+                        }
+                        squares[boxNo][0] = 0;
+
+                        imageBitmap = BitmapFactory.decodeResource(getResources(), pieceToDraw);
+                        bitmap1 = Bitmap.createScaledBitmap(imageBitmap, w / 12, w / 12, true);
+                        myBitmapCanvas.drawBitmap(bitmap1, lineX, lineY - w / 12, null);
+
+                        myBitmapCanvas.drawRect(lineX, lineY, lineX + w / 12, lineY + w / 12, rectPaint);
+                        invalidate();
+
+                    }
+                }
+                else if(abs(lineX-currentX)<2*w/12&&currentX>lineX+w/12&&currentY<lineY&&abs(lineY-currentY)<w/12){
+                    if (squares[boxNo - 9][0] == 0) {
+
+
+                        if (squares[boxNo][0] == 1) {
+                            pieceToDraw = R.drawable.pyramid_red;
+                            squares[boxNo - 9][0] = 1;
+                        } else if (squares[boxNo][0] == 2) {
+                            pieceToDraw = R.drawable.scarab_red;
+                            squares[boxNo - 9][0] = 2;
+                        } else if (squares[boxNo][0] == 3) {
+                            pieceToDraw = R.drawable.aunbis_red;
+                            squares[boxNo - 9][0] = 3;
+                        } else if (squares[boxNo][0] == 4) {
+                            pieceToDraw = R.drawable.pharoah_red;
+                            squares[boxNo - 9][0] = 4;
+                        } else if (squares[boxNo][0] == 5) {
+                            pieceToDraw = R.drawable.pyramid_silver;
+                            squares[boxNo - 9][0] = 5;
+                        } else if (squares[boxNo][0] == 6) {
+                            pieceToDraw = R.drawable.scarab_silver;
+                            squares[boxNo - 9][0] = 6;
+                        } else if (squares[boxNo][0] == 7) {
+                            pieceToDraw = R.drawable.anubis_silver;
+                            squares[boxNo - 9][0] = 7;
+                        } else if (squares[boxNo][0] == 8) {
+                            pieceToDraw = R.drawable.pharoah_silver;
+                            squares[boxNo -9][0] = 8;
+                        }
+                        squares[boxNo][0] = 0;
+                        imageBitmap = BitmapFactory.decodeResource(getResources(), pieceToDraw);
+                        bitmap1 = Bitmap.createScaledBitmap(imageBitmap, w / 12, w / 12, true);
+                        myBitmapCanvas.drawBitmap(bitmap1, lineX + w/12, lineY - w / 12, null);
+
+                        myBitmapCanvas.drawRect(lineX, lineY, lineX + w / 12, lineY + w / 12, rectPaint);
+                        invalidate();
+
+                    }
+
+
+                }
+                else if(abs(lineX-currentX)<w/12&&currentX<lineX&&currentY>lineY&&abs(lineY-currentY)<w/12){
+
+                    if (squares[boxNo - 1][0] == 0) {
+
+
+                        if (squares[boxNo][0] == 1) {
+                            pieceToDraw = R.drawable.pyramid_red;
+                            squares[boxNo - 1][0] = 1;
+                        } else if (squares[boxNo][0] == 2) {
+                            pieceToDraw = R.drawable.scarab_red;
+                            squares[boxNo - 1][0] = 2;
+                        } else if (squares[boxNo][0] == 3) {
+                            pieceToDraw = R.drawable.aunbis_red;
+                            squares[boxNo - 1][0] = 3;
+                        } else if (squares[boxNo][0] == 4) {
+                            pieceToDraw = R.drawable.pharoah_red;
+                            squares[boxNo - 1][0] = 4;
+                        } else if (squares[boxNo][0] == 5) {
+                            pieceToDraw = R.drawable.pyramid_silver;
+                            squares[boxNo - 1][0] = 5;
+                        } else if (squares[boxNo][0] == 6) {
+                            pieceToDraw = R.drawable.scarab_silver;
+                            squares[boxNo - 1][0] = 6;
+                        } else if (squares[boxNo][0] == 7) {
+                            pieceToDraw = R.drawable.anubis_silver;
+                            squares[boxNo - 1][0] = 7;
+                        } else if (squares[boxNo][0] == 8) {
+                            pieceToDraw = R.drawable.pharoah_silver;
+                            squares[boxNo - 1][0] = 8;
+                        }
+                        squares[boxNo][0] = 0;
+                        imageBitmap = BitmapFactory.decodeResource(getResources(), pieceToDraw);
+                        bitmap1 = Bitmap.createScaledBitmap(imageBitmap, w / 12, w / 12, true);
+                        myBitmapCanvas.drawBitmap(bitmap1, lineX-w/12, lineY , null);
+
+                        myBitmapCanvas.drawRect(lineX, lineY, lineX + w / 12, lineY + w / 12, rectPaint);
+                        invalidate();
+
+                    }
+
+                }
+                else if(abs(lineX-currentX)<2*w/12&&currentX>lineX+w/12&&currentY>lineY&&abs(lineY-currentY)<w/12){
+
+                    if (squares[boxNo +1][0] == 0) {
+
+
+                        if (squares[boxNo][0] == 1) {
+                            pieceToDraw = R.drawable.pyramid_red;
+                            squares[boxNo + 1][0] = 1;
+                        } else if (squares[boxNo][0] == 2) {
+                            pieceToDraw = R.drawable.scarab_red;
+                            squares[boxNo + 1][0] = 2;
+                        } else if (squares[boxNo][0] == 3) {
+                            pieceToDraw = R.drawable.aunbis_red;
+                            squares[boxNo + 1][0] = 3;
+                        } else if (squares[boxNo][0] == 4) {
+                            pieceToDraw = R.drawable.pharoah_red;
+                            squares[boxNo + 1][0] = 4;
+                        } else if (squares[boxNo][0] == 5) {
+                            pieceToDraw = R.drawable.pyramid_silver;
+                            squares[boxNo + 1][0] = 5;
+                        } else if (squares[boxNo][0] == 6) {
+                            pieceToDraw = R.drawable.scarab_silver;
+                            squares[boxNo + 1][0] = 6;
+                        } else if (squares[boxNo][0] == 7) {
+                            pieceToDraw = R.drawable.anubis_silver;
+                            squares[boxNo + 1][0] = 7;
+                        } else if (squares[boxNo][0] == 8) {
+                            pieceToDraw = R.drawable.pharoah_silver;
+                            squares[boxNo + 1][0] = 8;
+                        }
+                        squares[boxNo][0] = 0;
+                        imageBitmap = BitmapFactory.decodeResource(getResources(), pieceToDraw);
+                        bitmap1 = Bitmap.createScaledBitmap(imageBitmap, w / 12, w / 12, true);
+                        myBitmapCanvas.drawBitmap(bitmap1, lineX+w/12, lineY , null);
+
+                        myBitmapCanvas.drawRect(lineX, lineY, lineX + w / 12, lineY + w / 12, rectPaint);
+                        invalidate();
+
+                    }
+
+                }
+                else if(abs(lineX-currentX)<w/12&&currentX<lineX&&currentY>lineY+w/12&&abs(lineY-currentY)<2*w/12){
+                    if (squares[boxNo + 9][0] == 0) {
+
+
+                        if (squares[boxNo][0] == 1) {
+                            pieceToDraw = R.drawable.pyramid_red;
+                            squares[boxNo + 9][0] = 1;
+                        } else if (squares[boxNo][0] == 2) {
+                            pieceToDraw = R.drawable.scarab_red;
+                            squares[boxNo + 9][0] = 2;
+                        } else if (squares[boxNo][0] == 3) {
+                            pieceToDraw = R.drawable.aunbis_red;
+                            squares[boxNo + 9][0] = 3;
+                        } else if (squares[boxNo][0] == 4) {
+                            pieceToDraw = R.drawable.pharoah_red;
+                            squares[boxNo + 9][0] = 4;
+                        } else if (squares[boxNo][0] == 5) {
+                            pieceToDraw = R.drawable.pyramid_silver;
+                            squares[boxNo + 9][0] = 5;
+                        } else if (squares[boxNo][0] == 6) {
+                            pieceToDraw = R.drawable.scarab_silver;
+                            squares[boxNo + 9][0] = 6;
+                        } else if (squares[boxNo][0] == 7) {
+                            pieceToDraw = R.drawable.anubis_silver;
+                            squares[boxNo + 9][0] = 7;
+                        } else if (squares[boxNo][0] == 8) {
+                            pieceToDraw = R.drawable.pharoah_silver;
+                            squares[boxNo +9][0] = 8;
+                        }
+
+                        squares[boxNo][0] = 0;
+
+                        imageBitmap = BitmapFactory.decodeResource(getResources(), pieceToDraw);
+                        bitmap1 = Bitmap.createScaledBitmap(imageBitmap, w / 12, w / 12, true);
+                        myBitmapCanvas.drawBitmap(bitmap1, lineX - w/12, lineY + w / 12, null);
+
+                        myBitmapCanvas.drawRect(lineX, lineY, lineX + w / 12, lineY + w / 12, rectPaint);
+                        invalidate();
+
+                    }
+
+                }
+                else if(abs(lineX-currentX)<w/12&&currentX>lineX&&currentY>lineY+w/12&&abs(lineY-currentY)<2*w/12){
+                    if (squares[boxNo + 10][0] == 0) {
+
+
+                        if (squares[boxNo][0] == 1) {
+                            pieceToDraw = R.drawable.pyramid_red;
+                            squares[boxNo + 10][0] = 1;
+                        } else if (squares[boxNo][0] == 2) {
+                            pieceToDraw = R.drawable.scarab_red;
+                            squares[boxNo + 10][0] = 2;
+                        } else if (squares[boxNo][0] == 3) {
+                            pieceToDraw = R.drawable.aunbis_red;
+                            squares[boxNo + 10][0] = 3;
+                        } else if (squares[boxNo][0] == 4) {
+                            pieceToDraw = R.drawable.pharoah_red;
+                            squares[boxNo + 10][0] = 4;
+                        } else if (squares[boxNo][0] == 5) {
+                            pieceToDraw = R.drawable.pyramid_silver;
+                            squares[boxNo + 10][0] = 5;
+                        } else if (squares[boxNo][0] == 6) {
+                            pieceToDraw = R.drawable.scarab_silver;
+                            squares[boxNo + 10][0] = 6;
+                        } else if (squares[boxNo][0] == 7) {
+                            pieceToDraw = R.drawable.anubis_silver;
+                            squares[boxNo + 10][0] = 7;
+                        } else if (squares[boxNo][0] == 8) {
+                            pieceToDraw = R.drawable.pharoah_silver;
+                            squares[boxNo + 10][0] = 8;
+                        }
+                        squares[boxNo][0] = 0;
+                        imageBitmap = BitmapFactory.decodeResource(getResources(), pieceToDraw);
+                        bitmap1 = Bitmap.createScaledBitmap(imageBitmap, w / 12, w / 12, true);
+                        myBitmapCanvas.drawBitmap(bitmap1, lineX, lineY+ w / 12, null);
+
+                        myBitmapCanvas.drawRect(lineX, lineY, lineX + w / 12, lineY + w / 12, rectPaint);
+                        invalidate();
+
+                    }
+
+                }
+                else if(abs(lineX-currentX)<2*w/12&&currentX>lineX+w/12&&currentY>lineY+w/12&&abs(lineY-currentY)<2*w/12){
+                    if(squares[boxNo+11][0]==0){
+
+
+                        if(squares[boxNo][0]==1){
+                            pieceToDraw = R.drawable.pyramid_red;
+                            squares[boxNo+11][0]=1;
+                        }
+                        else if(squares[boxNo][0]==2){
+                            pieceToDraw = R.drawable.scarab_red;
+                            squares[boxNo+11][0]=2;
+                        }
+                        else if(squares[boxNo][0]==3){
+                            pieceToDraw = R.drawable.aunbis_red;
+                            squares[boxNo+11][0]=3;
+                        }
+                        else if(squares[boxNo][0]==4){
+                            pieceToDraw = R.drawable.pharoah_red;
+                            squares[boxNo+11][0]=4;
+                        }
+                        else if(squares[boxNo][0]==5){
+                            pieceToDraw = R.drawable.pyramid_silver;
+                            squares[boxNo+11][0]=5;
+                        }
+                        else if(squares[boxNo][0]==6){
+                            pieceToDraw = R.drawable.scarab_silver;
+                            squares[boxNo+11][0]=6;
+                        }
+                        else if(squares[boxNo][0]==7){
+                            pieceToDraw = R.drawable.anubis_silver;
+                            squares[boxNo+11][0]=7;
+                        }
+                        else if(squares[boxNo][0]==8){
+                            pieceToDraw = R.drawable.pharoah_silver;
+                            squares[boxNo+11][0]=8;
+                        }
+                        squares[boxNo][0] = 0;
+                        imageBitmap = BitmapFactory.decodeResource(getResources(),pieceToDraw);
+                        bitmap1= Bitmap.createScaledBitmap(imageBitmap,w/12,w/12,true);
+                        myBitmapCanvas.drawBitmap(bitmap1,lineX+w/12 , lineY+w/12, null);
+
+                        myBitmapCanvas.drawRect(lineX,lineY,lineX+w/12,lineY+w/12,rectPaint);
+                        invalidate();
+                    }
+                }
+
+                touched=false;
+                pieceSelected =false;
+
+                return false;
+        }
+        invalidate();
+
+        return false;
     }
 }
