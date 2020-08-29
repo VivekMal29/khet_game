@@ -9,7 +9,9 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.media.Image;
+import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 public class khet_canvas extends View {
 
@@ -226,13 +228,29 @@ public class khet_canvas extends View {
         squares[74][0] = 8;
         squares[74][1] = 1;
 
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        int currentX = (int) event.getX();
+        int currentY = (int) event.getY();
+
+        if(currentX>w/2-(5*w/12)&&currentX<w/2+(5*w/12)&&currentY>h/2-(4*w/12)&&currentY<h/2+(4*w/12)){
+
+
+            int disX = currentX - w/12;
+            int disY = currentY - (h/2-4*w/12);
+
+            int boxNo = (disY/(w/12)) *10 + disX/(w/12);
 
 
 
+            if(squares[boxNo][0]!=0){
+                Toast.makeText(getContext(), "something is here", Toast.LENGTH_SHORT).show();
+            }
+        }
 
 
-
-
-
+        return true;
     }
 }
